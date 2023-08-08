@@ -27,7 +27,10 @@ class Listing(models.Model):
     active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.title} : {self.description}"
+        return f"{self.title}"
+    
+    def highest_bid(self):
+        return self.bids.order_by('-bid').first()
 
 
 class Bid(models.Model):

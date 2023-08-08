@@ -9,6 +9,8 @@ from .models import *
 
 def index(request):
     active_listings = Listing.objects.filter(active=True)
+    for listing in active_listings:
+        print(listing.highest_bid())
     return render(request, "auctions/index.html", {
         "listings": active_listings
     })

@@ -5,7 +5,23 @@
 
 <ul>
   {% for listing in listings %}
-  <li>{{ listing }}</li>
+  <li>
+    <div> Title: {{ listing.title }}</div>
+    {% if listing.image_url %}
+      <img src = {{listing.image_url}} alt="Listing Image" width="300" height="200"></img>
+    {% else %}
+    <div> No Image provided</div>
+    {% endif %}
+    {% if listing.bids.all %}
+      <div> Price: {{ listing.highest_bid.bid }}$</div>
+    {% else %}
+      <div> Starting Price: {{ listing.starting_bid }}$</div>
+    {% endif %}
+    
+    <div> Created: {{ listing.created }}</div>
+  </li>
+  {% empty %}
+  <li>No active listings at the moment!</li>
   {% endfor %}
 </ul>
 {% endblock %}
