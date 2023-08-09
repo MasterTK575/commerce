@@ -39,6 +39,20 @@
       {% endif %}
     </ul>
     <hr />
+    {% if messages %}
+      <div class="messages">
+      {% for message in messages %}
+      <div {% if message.tags %}
+          {% if message.tags == "error" %} class="alert alert-danger"
+          {% elif message.tags == "success" %} class="alert alert-success"
+          {% endif %}
+          role="alert"
+          {% endif %}>
+          {{ message }}
+      </div>
+      {% endfor %}
+      </div>
+    {% endif %}
     {% block body %} {% endblock %}
   </body>
 </html>

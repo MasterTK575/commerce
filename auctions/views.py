@@ -5,9 +5,14 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 from .models import *
 
+# TODO:
+# add timespan to listings; when date is reached listing will get closed automatically
+# add option to modify listings
+# add option to modify comments
 
 def index(request):
     active_listings = Listing.objects.filter(active=True).order_by('-created')
@@ -27,10 +32,11 @@ def login_view(request):
         # Check if authentication successful
         if user is not None:
             login(request, user)
+            messages.success(request, "Logged in successfully.")
             return HttpResponseRedirect(reverse("index"))
         else:
+            messages.error(request, "Invalid username and/or password.")
             return render(request, "auctions/login.html", {
-                "message": "Invalid username and/or password."
             })
     else:
         return render(request, "auctions/login.html")
@@ -38,6 +44,7 @@ def login_view(request):
 @login_required
 def logout_view(request):
     logout(request)
+    messages.success(request, "Logged out successfully.")
     return HttpResponseRedirect(reverse("index"))
 
 
@@ -50,8 +57,8 @@ def register(request):
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
         if password != confirmation:
+            messages.error(request, "Passwords must match.")
             return render(request, "auctions/register.html", {
-                "message": "Passwords must match."
             })
 
         # Attempt to create new user
@@ -59,17 +66,18 @@ def register(request):
             user = User.objects.create_user(username, email, password)
             user.save()
         except IntegrityError:
+            messages.error(request, "Username already taken.")
             return render(request, "auctions/register.html", {
-                "message": "Username already taken."
             })
         login(request, user)
+        messages.success(request, "Registered successfully.")
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "auctions/register.html")
 
 @login_required
 def create_listing(request):
-    categories = Category.objects.all()
+    categories = Category.objects.all().order_by('name')
 
     if request.method == "POST":
         # get the data
@@ -81,30 +89,30 @@ def create_listing(request):
         user = request.user
         # error checking
         if not title or not description or not starting_bid:
+            messages.error(request, "Must fill out all required fields.")
             return render(request, "auctions/create_listing.html", {
-            "message": "Must fill out all required fields",
             "categories": categories
             })
         if len(title) > 64 or len(description) > 500 or len(image_url) > 500:
+            messages.error(request, "Too many characters.")
             return render(request, "auctions/create_listing.html", {
-            "message": "Too many characters",
             "categories": categories
             })
         try:
             starting_bid = int(starting_bid)
         except:
+            messages.error(request, "Bid must be an Integer.")
             return render(request, "auctions/create_listing.html", {
-            "message": "Bid must be an Integer",
             "categories": categories
             })
         if starting_bid < 0:
+            messages.error(request, "Bid must be a positive Integer.")
             return render(request, "auctions/create_listing.html", {
-            "message": "Bid must be a positive Integer",
             "categories": categories
             })
         if category_name and not Category.objects.filter(name=category_name).exists():
+            messages.error(request, "Must be a valid category.")
             return render(request, "auctions/create_listing.html", {
-            "message": "Must be a valid category",
             "categories": categories
             })
         # if ok, save listing
@@ -114,7 +122,54 @@ def create_listing(request):
             category = None
         new_listing = Listing(title=title, description=description, category=category, starting_bid=starting_bid, image_url=image_url, user=user)
         new_listing.save()
+        return HttpResponseRedirect(reverse("listing", args=(new_listing.id,)))
 
     return render(request, "auctions/create_listing.html", {
         "categories": categories
+    })
+
+def listing(request, listing_id):
+    # get the listing
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+    except:
+        messages.error(request, "No such listing exists.")
+        return HttpResponseRedirect(reverse("index"))
+    
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            messages.error(request, "Need to be logged in to bid.")
+            return HttpResponseRedirect(reverse("login"))
+        # error checking the bid
+        try:
+            bid = int(request.POST["bid"])
+        except:
+            messages.error(request, "Bid needs to be a positive Integer.")
+            return render(request, "auctions/listing.html", {
+            "listing": listing
+            })
+        if listing.user == request.user:
+            messages.error(request, "You can't bid on your own listings.")
+            return render(request, "auctions/listing.html", {
+            "listing": listing
+            })
+        if listing.bids.all():
+            if bid <= listing.highest_bid().bid:
+                messages.error(request, "Bid is not high engouh.")
+                return render(request, "auctions/listing.html", {
+                "listing": listing
+                })
+        else:
+            if bid < listing.starting_bid:
+                messages.error(request, "Bid is not high engouh.")
+                return render(request, "auctions/listing.html", {
+                "listing": listing
+                })
+        # if ok, commit bid
+        new_bid = Bid(bid=bid, user=request.user, listing=listing)
+        new_bid.save()
+        messages.success(request, "Bid placed successfully.")
+    
+    return render(request, "auctions/listing.html", {
+        "listing": listing
     })

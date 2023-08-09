@@ -1,0 +1,55 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+
+<h2>Listing: {{ listing.title }}</h2>
+
+
+
+<div>
+    {% if listing.image_url %}
+      <img src = {{listing.image_url}} alt="Listing Image" width="300" height="200"></img>
+    {% else %}
+    <div> No Image provided</div>
+    {% endif %}
+    <div>{{ listing.description }}</div>
+    {% if listing.bids.all %}
+        <div> Price: {{ listing.highest_bid.bid }}$</div>
+        <div>{{ listing.bids.count }} bid(s) so far.
+            <span>The highest bid is currently held by:
+                {% if request.user == listing.highest_bid.user %}
+                    You
+                {% else %}   
+                {{ listing.highest_bid.user }}
+                {% endif %}
+            </span>
+        </div>
+    {% else %}
+      <div> Starting Price: {{ listing.starting_bid }}$</div>
+      <div>No bids for far.</div>
+    {% endif %}
+    <form action="{% url 'listing' listing.id %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <input class="form-control" type="number" min="1" name="bid" placeholder="Your Bid" required>
+        </div>
+        <input class="btn btn-primary" type="submit" value="Place bid">
+    </form>
+</div>
+
+<h3>Details</h3>
+<div> Listed by: 
+    {% if request.user == listing.user %}
+    You
+    {% else %}   
+    {{ listing.user }}
+    {% endif %}
+    </div>
+<div> Last modified: {{ listing.modified }}</div>
+<div> Created: {{ listing.created }}</div>
+
+<h3>Comments</h3>
+{% endblock %}
+
+
