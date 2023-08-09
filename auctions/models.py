@@ -19,7 +19,7 @@ class Listing(models.Model):
     category = models.ForeignKey(
         Category, null=True, on_delete=models.SET_NULL, related_name="listings")
     starting_bid = models.IntegerField()
-    image_url = models.URLField(blank=True)
+    image_url = models.URLField(blank=True, max_length=500)
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="listings")
     created = models.DateTimeField(auto_now_add=True)
