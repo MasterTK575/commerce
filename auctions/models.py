@@ -43,6 +43,14 @@ class Bid(models.Model):
 
     def __str__(self):
         return f"{self.bid} by {self.user} for {self.listing}"
+    
+class Watchlist(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="watchlist")
+    listings = models.ManyToManyField(Listing, related_name="watchlist")
+
+    def __str__(self):
+        return f"{self.listings} by {self.user}"
+
 
 
 class Comment(models.Model):

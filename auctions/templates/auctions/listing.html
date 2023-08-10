@@ -6,6 +6,15 @@
 <h2>Listing: {{ listing.title }}</h2>
 
 
+{% if user.is_authenticated and user != listing.user %}
+<form method="post" action="{% url 'watchlist' %}">
+    {% csrf_token %}
+    <input type="hidden" name="listing" value="{{ listing.id }}"/> 
+    <input {% if listing in user.watchlist.listings.all %} class="btn btn-outline-danger" type="submit" value="Remove from watchlist" {% else %} class="btn btn-outline-success" type="submit" value="Add to watchlist" {% endif %}>
+</form>
+{% endif %}
+
+
 
 <div>
     {% if listing.image_url %}

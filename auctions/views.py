@@ -173,3 +173,47 @@ def listing(request, listing_id):
     return render(request, "auctions/listing.html", {
         "listing": listing
     })
+
+@login_required
+def my_listings(request):
+    user = request.user
+    listings = Listing.objects.filter(user=user).order_by('-created')
+    return render(request, "auctions/my_listings.html", {
+        "listings": listings
+    })
+
+@login_required
+def watchlist(request):
+    user = request.user
+    if request.method == "POST":
+        listing_id = request.POST["listing"]
+        # error checking
+        try:
+            listing = Listing.objects.get(pk=listing_id)
+        except:
+            messages.error(request, "Not a valid listing.")
+            return HttpResponseRedirect(reverse("index"))
+        if user == listing.user:
+            messages.error(request, "Can't add own listings to your watchlist.")
+            return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+        
+        # get or create the watchlist for the user
+        watchlist, created = Watchlist.objects.get_or_create(user=user)
+
+        # if on watchlist, remove; if not, add
+        if user.watchlist.listings.filter(pk=listing_id).exists():
+            watchlist.listings.remove(listing)
+            messages.error(request, "Removed from your watchlist.")
+            return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+        else:
+            watchlist.listings.add(listing)
+            messages.success(request, "Added to your watchlist.")
+            return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+    
+    # if user has a watchlist already, get all listings on it
+    listings = []
+    if hasattr(user, 'watchlist'): 
+        listings = user.watchlist.listings.all()
+    return render(request, "auctions/watchlist.html", {
+        "listings": listings
+    })
