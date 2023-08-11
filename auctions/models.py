@@ -63,4 +63,5 @@ class Comment(models.Model):
     modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user} commented {self.comment} on {self.listing}"
+        formatted_date = self.created.strftime('%Y-%m-%d %H:%M')
+        return f"{self.user} on {formatted_date}: {self.comment}"

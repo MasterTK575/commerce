@@ -15,16 +15,18 @@
     {% else %}
     <div> No Image provided</div>
     {% endif %}
-    {% if listing.bids.all %}
+    {% if listing.bids.exists %}
       <div> Price: {{ listing.highest_bid.bid }}$</div>
     {% else %}
       <div> Starting Price: {{ listing.starting_bid }}$</div>
     {% endif %}
     
+    <div>{% if  listing.active == True %} Active {% else %} Closed {% endif %}</div>
+    <div> Last modified: {{ listing.modified }}</div>
     <div> Created: {{ listing.created }}</div>
   </li>
   {% empty %}
-  <li>No active listings at the moment!</li>
+  <li>You haven't bid on any listings yet.</li>
   {% endfor %}
 </ul>
 {% endblock %}

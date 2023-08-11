@@ -12,10 +12,9 @@ from .models import *
 # TODO:
 # add timespan to listings; when date is reached listing will get closed automatically
 # add option to modify listings
-# add option to modify comments
 
 def index(request):
-    active_listings = Listing.objects.filter(active=True).order_by('-created')
+    active_listings = Listing.objects.filter(active=True).order_by('-modified')
     return render(request, "auctions/index.html", {
         "listings": active_listings
     })
@@ -128,6 +127,74 @@ def create_listing(request):
         "categories": categories
     })
 
+@login_required
+def edit_listing(request, listing_id):
+    user = request.user
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+    except:
+        messages.error(request, "No such listing exists.")
+        return HttpResponseRedirect(reverse("index"))
+    if listing.user != user:
+        messages.error(request, "Can only edit your own listings.")
+        return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+    
+    # if listing is edited
+    if request.method == "POST":
+        title = request.POST["title"]
+        description = request.POST["description"]
+        starting_bid = request.POST["starting_bid"]
+        image_url = request.POST["image_url"]
+        category_name = request.POST["category"]
+        # error checking
+        if not title or not description or not starting_bid:
+            messages.error(request, "Must fill out all required fields.")
+            return HttpResponseRedirect(reverse("edit_listing", args=(listing_id,)))
+        
+        if len(title) > 64 or len(description) > 500 or len(image_url) > 500:
+            messages.error(request, "Too many characters.")
+            return HttpResponseRedirect(reverse("edit_listing", args=(listing_id,)))
+        
+        try:
+            starting_bid = int(starting_bid)
+        except:
+            messages.error(request, "Bid must be an Integer.")
+            return HttpResponseRedirect(reverse("edit_listing", args=(listing_id,)))
+        
+        if starting_bid < 0:
+            messages.error(request, "Bid must be a positive Integer.")
+            return HttpResponseRedirect(reverse("edit_listing", args=(listing_id,)))
+        
+        if category_name and not Category.objects.filter(name=category_name).exists():
+            messages.error(request, "Must be a valid category.")
+            return HttpResponseRedirect(reverse("edit_listing", args=(listing_id,)))
+        
+        # no changing the starting bid if there have already been bids
+        if listing.bids.exists() and listing.starting_bid != starting_bid:
+            messages.error(request, "Can't edit the starting_bid if bids have already been placed.")
+            return HttpResponseRedirect(reverse("edit_listing", args=(listing_id,)))
+        
+        # if all okay, update listing
+        listing.title = title
+        listing.description = description
+        listing.starting_bid = starting_bid
+        listing.image_url = image_url
+        if category_name:
+            category = Category.objects.get(name=category_name)
+            listing.category = category
+        else:
+            listing.category = None
+        listing.save()
+        return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+    
+    # if GET
+    else:
+        categories = Category.objects.all().order_by('name')
+        return render(request, "auctions/edit_listing.html", {
+        "listing": listing,
+        "categories": categories
+        })
+
 def listing(request, listing_id):
     # get the listing
     try:
@@ -179,7 +246,7 @@ def listing(request, listing_id):
                 return render(request, "auctions/listing.html", {
                 "listing": listing
                 })
-            if listing.bids.all():
+            if listing.bids.exists():
                 if bid <= listing.highest_bid().bid:
                     messages.error(request, "Bid is not high engouh.")
                     return render(request, "auctions/listing.html", {
@@ -196,14 +263,16 @@ def listing(request, listing_id):
             new_bid.save()
             messages.success(request, "Bid placed successfully.")
     
+    comments = Comment.objects.filter(listing=listing).order_by('-created')
     return render(request, "auctions/listing.html", {
-        "listing": listing
+        "listing": listing,
+        "comments" : comments
     })
 
 @login_required
 def my_listings(request):
     user = request.user
-    listings = Listing.objects.filter(user=user).order_by('-created')
+    listings = Listing.objects.filter(user=user).order_by('-modified')
     return render(request, "auctions/my_listings.html", {
         "listings": listings
     })
@@ -273,3 +342,31 @@ def my_bids(request):
     return render(request, "auctions/my_bids.html", {
             "listings": listings_withbid
         })
+
+@login_required
+def comment(request):
+    if request.method == "POST":
+        user = request.user
+        listing_id = request.POST['listing']
+        try:
+            listing = Listing.objects.get(pk=listing_id)
+        except:
+            messages.error(request, "Not a valid listing.")
+            return HttpResponseRedirect(reverse("index"))
+        text = request.POST['comment']
+        if listing.active == False:
+            messages.error(request, "Can't comment on closed listings.")
+            return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+        if not text:
+            messages.error(request, "Must provide a comment.")
+            return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+        if len(text) > 200:
+            messages.error(request, "Comment is too long.")
+            return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+        # if ok, save comment
+        comment = Comment(comment=text, user=user, listing=listing)
+        comment.save()
+        messages.success(request, "Comment placed successfully.")
+        return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+
+    return HttpResponseRedirect(reverse("index"))

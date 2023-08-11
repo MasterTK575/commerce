@@ -4,7 +4,7 @@
 
 {% if listing.active == False %}
 <div class="alert alert-secondary" role="alert">This listing has been closed.
-    {% if listing.bids.all %} {% if request.user == listing.highest_bid.user %} You are the winner!
+    {% if listing.bids.exists %} {% if request.user == listing.highest_bid.user %} You are the winner!
     {% else %} The winner is: {{ listing.highest_bid.user }} {% endif %} {% else %} No bids were placed. {% endif %}</div>
 {% endif %}
 <h2>Listing: {{ listing.title }}</h2>
@@ -27,7 +27,7 @@
     <div> No Image provided</div>
     {% endif %}
     <div>{{ listing.description }}</div>
-    {% if listing.bids.all %}
+    {% if listing.bids.exists %}
         <div> Price: {{ listing.highest_bid.bid }}$</div>
         <div>{{ listing.bids.count }} bid(s) so far.
             <span>The highest bid is currently held by:
@@ -65,14 +65,19 @@
         {{ listing.user }}
         {% endif %}
         </div>
+    <div> {% if listing.category %} Category: {{ listing.category.name }} {% else %} No Category.{% endif %} </div>
     <div> Last modified: {{ listing.modified }}</div>
     <div> Created: {{ listing.created }}</div>
 
     {% if request.user == listing.user %}
-    
+    <form action="{% url 'edit_listing' listing.id %}" method="get">
+        {% csrf_token %}
+        <input class="btn btn-outline-warning" type="submit" value="Edit Listing">
+    </form>
+
     <form action="{% url 'listing' listing.id %}" method="post">
         {% csrf_token %}
-        <a class="btn btn-outline-warning" href="#" role="edit_button">Edit Listing</a>
+        
         <input type="hidden" name="form_type" value="close_listing_form">
         {% if listing.active == True %}<input class="btn btn-outline-danger" type="submit" value="Close Listing">
         {% else %}<input class="btn btn-outline-success" type="submit" value="Reopen Listing">{% endif %}
@@ -80,6 +85,24 @@
     {% endif %}
 
     <h3>Comments</h3>
+    <ul>
+        {% for comment in comments %}
+        <li>{{ comment }}</li>
+        {% empty %}
+        <li>No comments yet.</li>
+        {% endfor %}
+    </ul>
+
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'comment' %}">
+        {% csrf_token %}
+        <input type="hidden" name="listing" value="{{ listing.id }}"/>
+        <div class="form-group">
+            <textarea class="form-control" name="comment" {% if listing.active == True %} placeholder="Your Comment." {% else %} placeholder="Can't comment on closed listings." disabled {% endif %}rows="2" required></textarea>
+        </div>
+        <input class="btn btn-primary" type="submit" value="Comment" {% if listing.active == False %} disabled {% endif %}>
+    </form>
+    {% endif %}
 
     <a class="btn btn-outline-primary" href="{% url 'index' %}" role="back_button">Back</a>
     

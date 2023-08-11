@@ -1,0 +1,33 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+
+    <h2>Edit Listing: {{ listing.title }}</h2>
+
+
+    <form action="{% url 'edit_listing' listing.id %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <input class="form-control" autofocus type="text" name="title" placeholder="Title" value="{{ listing.title }}" required>
+        </div>
+        <div class="form-group">
+            <textarea class="form-control" name="description" placeholder="Description" rows="5" required>{{ listing.description }}</textarea>
+        </div>
+        <div class="form-group">
+            <input class="form-control" type="number" min="0" name="starting_bid" placeholder="Starting Bid" value="{{ listing.starting_bid }}" {% if listing.bids.exists %} disabled {% else %} required {% endif %}>
+        </div>
+        <div class="form-group">
+            <input class="form-control" type="url" name="image_url" placeholder="URL to your Image" value="{{ listing.image_url }}">
+        </div>
+        <div class="form-group">
+            <select class="form-select" aria-label="Default select example" name="category">
+                <option value="" {% if listing.category == None %} selected {% endif %}>Select a category</option>
+                {% for category in categories %}
+                    <option value={{category.name}} {% if listing.category == category %} selected {% endif %}>{{ category.name }}</option>
+                {% endfor %}
+              </select>
+        </div>
+        <input class="btn btn-primary" type="submit" value="Edit Listing">
+    </form>
+{% endblock %}
