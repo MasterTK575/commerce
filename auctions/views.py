@@ -136,39 +136,65 @@ def listing(request, listing_id):
         messages.error(request, "No such listing exists.")
         return HttpResponseRedirect(reverse("index"))
     
+    # if user submits a form
     if request.method == "POST":
         if not request.user.is_authenticated:
-            messages.error(request, "Need to be logged in to bid.")
+            messages.error(request, "Need to be logged in.")
             return HttpResponseRedirect(reverse("login"))
-        # error checking the bid
-        try:
-            bid = int(request.POST["bid"])
-        except:
-            messages.error(request, "Bid needs to be a positive Integer.")
+        
+        # if user closed/ opened the listing
+        if request.POST['form_type'] == 'close_listing_form':
+            if request.user != listing.user:
+                messages.error(request, "Can only edit your own listings.")
+                return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
+            # if listing is active, close it; if it's closed, reopen it
+            if listing.active == True:
+                listing.active = False
+                messages.success(request, "Listing closed successfully.")
+            else:
+                listing.active = True
+                messages.success(request, "Listing reopened successfully.")
+            listing.save()
             return render(request, "auctions/listing.html", {
-            "listing": listing
-            })
-        if listing.user == request.user:
-            messages.error(request, "You can't bid on your own listings.")
-            return render(request, "auctions/listing.html", {
-            "listing": listing
-            })
-        if listing.bids.all():
-            if bid <= listing.highest_bid().bid:
-                messages.error(request, "Bid is not high engouh.")
+                "listing": listing
+                })
+            
+        # if user placed a bid
+        if request.POST['form_type'] == 'bid_form':
+            if listing.active == False:
+                messages.error(request, "Can only bid on active listings.")
                 return render(request, "auctions/listing.html", {
                 "listing": listing
                 })
-        else:
-            if bid < listing.starting_bid:
-                messages.error(request, "Bid is not high engouh.")
+            # error checking the bid
+            try:
+                bid = int(request.POST["bid"])
+            except:
+                messages.error(request, "Bid needs to be a positive Integer.")
                 return render(request, "auctions/listing.html", {
                 "listing": listing
                 })
-        # if ok, commit bid
-        new_bid = Bid(bid=bid, user=request.user, listing=listing)
-        new_bid.save()
-        messages.success(request, "Bid placed successfully.")
+            if listing.user == request.user:
+                messages.error(request, "You can't bid on your own listings.")
+                return render(request, "auctions/listing.html", {
+                "listing": listing
+                })
+            if listing.bids.all():
+                if bid <= listing.highest_bid().bid:
+                    messages.error(request, "Bid is not high engouh.")
+                    return render(request, "auctions/listing.html", {
+                    "listing": listing
+                    })
+            else:
+                if bid < listing.starting_bid:
+                    messages.error(request, "Bid is not high engouh.")
+                    return render(request, "auctions/listing.html", {
+                    "listing": listing
+                    })
+            # if ok, commit bid
+            new_bid = Bid(bid=bid, user=request.user, listing=listing)
+            new_bid.save()
+            messages.success(request, "Bid placed successfully.")
     
     return render(request, "auctions/listing.html", {
         "listing": listing
@@ -217,3 +243,33 @@ def watchlist(request):
     return render(request, "auctions/watchlist.html", {
         "listings": listings
     })
+
+def categories(request, category_id):
+    categories = Category.objects.all()
+    # if category page is requested
+    if category_id == 0:
+        return render(request, "auctions/categories.html", {
+            "categories": categories
+        })
+    # else if specific category
+    try:
+        category = Category.objects.get(pk=category_id)
+    except:
+        messages.error(request, "No such category exists.")
+        return render(request, "auctions/categories.html", {
+            "categories": categories
+        })
+    listings = category.listings.all()
+    return render(request, "auctions/category.html", {
+            "category": category,
+            "listings": listings
+        })
+
+@login_required
+def my_bids(request):
+    user = request.user
+    # bids is the related name; bids__user means we access the user attribute of the Bid model
+    listings_withbid = Listing.objects.filter(bids__user=user).distinct().order_by('-created')
+    return render(request, "auctions/my_bids.html", {
+            "listings": listings_withbid
+        })

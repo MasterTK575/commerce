@@ -2,7 +2,11 @@
 
 {% block body %}
 
-
+{% if listing.active == False %}
+<div class="alert alert-secondary" role="alert">This listing has been closed.
+    {% if listing.bids.all %} {% if request.user == listing.highest_bid.user %} You are the winner!
+    {% else %} The winner is: {{ listing.highest_bid.user }} {% endif %} {% else %} No bids were placed. {% endif %}</div>
+{% endif %}
 <h2>Listing: {{ listing.title }}</h2>
 
 
@@ -42,12 +46,13 @@
     <form action="{% url 'listing' listing.id %}" method="post">
         {% csrf_token %}
         <div class="form-group">
+            <input type="hidden" name="form_type" value="bid_form">
             <input class="form-control" type="number" min="1" name="bid"
             {% if not user.is_authenticated %} placeholder="Need to be logged in to place a bid." {% elif request.user == listing.user%} placeholder="You can't bid on your own listings."
-            {% else %} placeholder="Your bid." {% endif %}required
-            {% if not user.is_authenticated or request.user == listing.user %} disabled {% endif %}>
+            {% elif listing.active == False %} placeholder="This listing has been closed."{% else %} placeholder="Your bid." {% endif %}required
+            {% if not user.is_authenticated or request.user == listing.user or listing.active == False%} disabled {% endif %}>
         </div>
-        <input class="btn btn-primary" type="submit" value="Place bid"{% if not user.is_authenticated or request.user == listing.user%} disabled {% endif %}>
+        <input class="btn btn-primary" type="submit" value="Place bid"{% if not user.is_authenticated or request.user == listing.user or listing.active == False %} disabled {% endif %}>
     </form>
 </div>
 
@@ -63,13 +68,21 @@
     <div> Last modified: {{ listing.modified }}</div>
     <div> Created: {{ listing.created }}</div>
 
+    {% if request.user == listing.user %}
+    
+    <form action="{% url 'listing' listing.id %}" method="post">
+        {% csrf_token %}
+        <a class="btn btn-outline-warning" href="#" role="edit_button">Edit Listing</a>
+        <input type="hidden" name="form_type" value="close_listing_form">
+        {% if listing.active == True %}<input class="btn btn-outline-danger" type="submit" value="Close Listing">
+        {% else %}<input class="btn btn-outline-success" type="submit" value="Reopen Listing">{% endif %}
+    </form>
+    {% endif %}
+
     <h3>Comments</h3>
 
     <a class="btn btn-outline-primary" href="{% url 'index' %}" role="back_button">Back</a>
-    {% if request.user == listing.user %}
-    <a class="btn btn-outline-warning" href="#" role="edit_button">Edit Listing</a>
-    <a class="btn btn-outline-danger" href="#" role="close_button">Close Listing</a>
-    {% endif %}
+    
 </div>
 {% endblock %}
 
