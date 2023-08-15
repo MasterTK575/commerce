@@ -5,28 +5,28 @@
 
 <h2>My Listings</h2>
 
-
-<ul>
+<div class="list-group">
   {% for listing in listings %}
-  <li>
-    <div><a href="{% url 'listing' listing.id %}">{{ listing.title }}</a></div>
-    {% if listing.image_url %}
+    <a href="{% url 'listing' listing.id %}" class="list-group-item list-group-item-action">
+      <div class="d-flex w-100 justify-content-between">
+        <h5 class="mb-1">{{ listing.title }}</h5>
+        <small class="text-body-secondary">Last modified: {{ listing.modified }}</small>
+      </div>
+      {% if listing.image_url %}
       <img src = {{listing.image_url}} alt="Listing Image" width="300" height="200"></img>
-    {% else %}
-    <div> No Image provided</div>
-    {% endif %}
-    {% if listing.bids.exists %}
-      <div> Price: {{ listing.highest_bid.bid }}$</div>
-    {% else %}
-      <div> Starting Price: {{ listing.starting_bid }}$</div>
-    {% endif %}
-    
-    <div>{% if  listing.active == True %} Active {% else %} Closed {% endif %}</div>
-    <div> Last modified: {{ listing.modified }}</div>
-    <div> Created: {{ listing.created }}</div>
-  </li>
+      {% else %}
+      <div> No Image provided</div>
+      {% endif %}
+      {% if listing.bids.exists %}
+      <p class="mb-1"> Price: {{ listing.highest_bid.bid }}$</p>
+      {% else %}
+      <p class="mb-1"> Starting Price: {{ listing.starting_bid }}$</p>
+      {% endif %}
+      <p class="mb-1"><small class="text-body-secondary">{% if  listing.active == True %} Active {% else %} Closed {% endif %}</small></p>
+      <small class="text-body-secondary">Created: {{ listing.created }}</small>
+    </a>
   {% empty %}
-  <li>You have no listings at the moment!</li>
+  <a href="{% url 'create_listing' %}" class="list-group-item list-group-item-action">You have no listings at the moment. Create one!</a>
   {% endfor %}
-</ul>
+</div>
 {% endblock %}

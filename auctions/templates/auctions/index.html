@@ -21,13 +21,13 @@
       {% if listing.bids.exists %}
       <p class="mb-1"> Price: {{ listing.highest_bid.bid }}$</p>
       {% else %}
-        <p class="mb-1"> Starting Price: {{ listing.starting_bid }}$</p>
+      <p class="mb-1"> Starting Price: {{ listing.starting_bid }}$</p>
       {% endif %}
       <p class="mb-1">{{ listing.description }}</p>
       <small class="text-body-secondary">Created: {{ listing.created }}</small>
     </a>
   {% empty %}
-  <a href="{% url 'create_listing' %}" class="list-group-item list-group-item-action">No active listings at the moment. Create one!</li>
+  <a href="{% url 'create_listing' %}" class="list-group-item list-group-item-action">No active listings at the moment. Create one!</a>
   {% endfor %}
 </div>
 {% endblock %}

@@ -15,7 +15,10 @@
             <textarea class="form-control" name="description" placeholder="Description" rows="5" required>{{ listing.description }}</textarea>
         </div>
         <div class="form-group">
-            <input class="form-control" type="number" min="0" name="starting_bid" placeholder="Starting Bid" value="{{ listing.starting_bid }}" {% if listing.bids.exists %} disabled {% else %} required {% endif %}>
+            <input class="form-control" type="number" min="0" name="starting_bid" placeholder="Starting Bid" value="{{ listing.starting_bid }}"
+            {% if listing.bids.exists %} disabled> 
+            <input class="form-control" type="hidden" type="number" min="0" name="starting_bid" value="{{ listing.starting_bid }}">
+            {% else %} required>{% endif %}
         </div>
         <div class="form-group">
             <input class="form-control" type="url" name="image_url" placeholder="URL to your Image" value="{{ listing.image_url }}">

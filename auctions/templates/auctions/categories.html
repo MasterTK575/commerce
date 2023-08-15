@@ -6,13 +6,13 @@
 <h2>All Categories</h2>
 
 
-<ul>
+<div class="list-group">
   {% for category in categories %}
-  <li>
-    <div><a href="{% url 'categories' category.id %}">{{ category.name }}</a></div>
-  </li>
+  <a href="{% url 'categories' category.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">{{ category.name }}
+    <span class="badge bg-primary rounded-pill">14</span>
+  </a>
   {% empty %}
-  <li>No categories at the moment!</li>
+  <a href="{% url 'index' %}" class="list-group-item list-group-item-action">No categories at the moment.</a>
   {% endfor %}
-</ul>
+</div>
 {% endblock %}

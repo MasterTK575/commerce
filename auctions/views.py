@@ -9,14 +9,29 @@ from django.contrib import messages
 
 from .models import *
 
-# TODO:
-# add timespan to listings; when date is reached listing will get closed automatically
-# add option to modify listings
+
+def get_pilldata_navbar(request):
+    user = request.user
+    pilldata = []
+    if user.is_authenticated:
+        my_listings_count = Listing.objects.filter(user=user).count()
+        my_bids_count = Listing.objects.filter(bids__user=user).distinct().count()
+        try:
+            watchlist_count = user.watchlist.listings.all().count()
+        except:
+            watchlist_count = 0
+        pilldata.append(my_listings_count)
+        pilldata.append(my_bids_count)
+        pilldata.append(watchlist_count)
+    return pilldata
+
 
 def index(request):
+    pilldata = get_pilldata_navbar(request)
     active_listings = Listing.objects.filter(active=True).order_by('-modified')
     return render(request, "auctions/index.html", {
-        "listings": active_listings
+        "listings": active_listings,
+        "pilldata": pilldata
     })
 
 
@@ -123,8 +138,11 @@ def create_listing(request):
         new_listing.save()
         return HttpResponseRedirect(reverse("listing", args=(new_listing.id,)))
 
+    # if GET
+    pilldata = get_pilldata_navbar(request)
     return render(request, "auctions/create_listing.html", {
-        "categories": categories
+        "categories": categories,
+        "pilldata": pilldata
     })
 
 @login_required
@@ -189,10 +207,12 @@ def edit_listing(request, listing_id):
     
     # if GET
     else:
+        pilldata = get_pilldata_navbar(request)
         categories = Category.objects.all().order_by('name')
         return render(request, "auctions/edit_listing.html", {
         "listing": listing,
-        "categories": categories
+        "categories": categories,
+        "pilldata": pilldata
         })
 
 def listing(request, listing_id):
@@ -222,59 +242,51 @@ def listing(request, listing_id):
                 listing.active = True
                 messages.success(request, "Listing reopened successfully.")
             listing.save()
-            return render(request, "auctions/listing.html", {
-                "listing": listing
-                })
+            return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             
         # if user placed a bid
         if request.POST['form_type'] == 'bid_form':
             if listing.active == False:
                 messages.error(request, "Can only bid on active listings.")
-                return render(request, "auctions/listing.html", {
-                "listing": listing
-                })
+                return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             # error checking the bid
             try:
                 bid = int(request.POST["bid"])
             except:
                 messages.error(request, "Bid needs to be a positive Integer.")
-                return render(request, "auctions/listing.html", {
-                "listing": listing
-                })
+                return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             if listing.user == request.user:
                 messages.error(request, "You can't bid on your own listings.")
-                return render(request, "auctions/listing.html", {
-                "listing": listing
-                })
+                return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             if listing.bids.exists():
                 if bid <= listing.highest_bid().bid:
                     messages.error(request, "Bid is not high engouh.")
-                    return render(request, "auctions/listing.html", {
-                    "listing": listing
-                    })
+                    return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             else:
                 if bid < listing.starting_bid:
                     messages.error(request, "Bid is not high engouh.")
-                    return render(request, "auctions/listing.html", {
-                    "listing": listing
-                    })
+                    return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             # if ok, commit bid
             new_bid = Bid(bid=bid, user=request.user, listing=listing)
             new_bid.save()
             messages.success(request, "Bid placed successfully.")
     
+    pilldata = get_pilldata_navbar(request)
     comments = Comment.objects.filter(listing=listing).order_by('-created')
     return render(request, "auctions/listing.html", {
         "listing": listing,
-        "comments" : comments
+        "comments" : comments,
+        "pilldata": pilldata
     })
 
 @login_required
 def my_listings(request):
     user = request.user
+    pilldata = get_pilldata_navbar(request)
     listings = Listing.objects.filter(user=user).order_by('-modified')
     return render(request, "auctions/my_listings.html", {
-        "listings": listings
+        "listings": listings,
+        "pilldata": pilldata
     })
 
 @login_required
@@ -307,18 +319,22 @@ def watchlist(request):
     
     # if user has a watchlist already, get all listings on it
     listings = []
+    pilldata = get_pilldata_navbar(request)
     if hasattr(user, 'watchlist'): 
-        listings = user.watchlist.listings.all()
+        listings = user.watchlist.listings.all().order_by('-modified')
     return render(request, "auctions/watchlist.html", {
-        "listings": listings
+        "listings": listings,
+        "pilldata": pilldata
     })
 
 def categories(request, category_id):
     categories = Category.objects.all()
+    pilldata = get_pilldata_navbar(request)
     # if category page is requested
     if category_id == 0:
         return render(request, "auctions/categories.html", {
-            "categories": categories
+            "categories": categories,
+            "pilldata": pilldata
         })
     # else if specific category
     try:
@@ -326,21 +342,25 @@ def categories(request, category_id):
     except:
         messages.error(request, "No such category exists.")
         return render(request, "auctions/categories.html", {
-            "categories": categories
+            "categories": categories,
+            "pilldata": pilldata
         })
-    listings = category.listings.all()
+    listings = category.listings.filter(active=True).order_by('-modified')
     return render(request, "auctions/category.html", {
             "category": category,
-            "listings": listings
+            "listings": listings,
+            "pilldata": pilldata
         })
 
 @login_required
 def my_bids(request):
+    pilldata = get_pilldata_navbar(request)
     user = request.user
     # bids is the related name; bids__user means we access the user attribute of the Bid model
-    listings_withbid = Listing.objects.filter(bids__user=user).distinct().order_by('-created')
+    listings_withbid = Listing.objects.filter(bids__user=user).distinct().order_by('-modified')
     return render(request, "auctions/my_bids.html", {
-            "listings": listings_withbid
+            "listings": listings_withbid,
+            "pilldata": pilldata
         })
 
 @login_required
