@@ -102,31 +102,21 @@ def create_listing(request):
         # error checking
         if not title or not description or not starting_bid:
             messages.error(request, "Must fill out all required fields.")
-            return render(request, "auctions/create_listing.html", {
-            "categories": categories
-            })
+            return HttpResponseRedirect(reverse("create_listing"))
         if len(title) > 64 or len(description) > 500 or len(image_url) > 500:
             messages.error(request, "Too many characters.")
-            return render(request, "auctions/create_listing.html", {
-            "categories": categories
-            })
+            return HttpResponseRedirect(reverse("create_listing"))
         try:
             starting_bid = int(starting_bid)
         except:
             messages.error(request, "Bid must be an Integer.")
-            return render(request, "auctions/create_listing.html", {
-            "categories": categories
-            })
+            return HttpResponseRedirect(reverse("create_listing"))
         if starting_bid < 0:
             messages.error(request, "Bid must be a positive Integer.")
-            return render(request, "auctions/create_listing.html", {
-            "categories": categories
-            })
+            return HttpResponseRedirect(reverse("create_listing"))
         if category_name and not Category.objects.filter(name=category_name).exists():
             messages.error(request, "Must be a valid category.")
-            return render(request, "auctions/create_listing.html", {
-            "categories": categories
-            })
+            return HttpResponseRedirect(reverse("create_listing"))
         # if ok, save listing
         if category_name:
             category = Category.objects.get(name=category_name)
