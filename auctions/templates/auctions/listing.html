@@ -4,8 +4,8 @@
 
 {% if listing.active == False %}
 <div class="alert alert-secondary" role="alert">This listing has been closed.
-    {% if listing.bids.exists %} {% if request.user == listing.highest_bid.user %} You are the winner!
-    {% else %} The winner is: {{ listing.highest_bid.user }} {% endif %} {% else %} No bids were placed. {% endif %}</div>
+    {% if listing.bids.exists %} {% if request.user == listing.highest_bid.user %} <strong>You</strong> are the winner!
+    {% else %} The winner is: <strong>{{ listing.highest_bid.user }} </strong> {% endif %} {% else %} No bids were placed. {% endif %}</div>
 {% endif %}
 <h2>Listing: {{ listing.title }}</h2>
 
@@ -14,7 +14,7 @@
 <form method="post" action="{% url 'watchlist' %}">
     {% csrf_token %}
     <input type="hidden" name="listing" value="{{ listing.id }}"/> 
-    <input {% if listing in user.watchlist.listings.all %} class="btn btn-outline-danger" type="submit" value="Remove from watchlist" {% else %} class="btn btn-outline-success" type="submit" value="Add to watchlist" {% endif %}>
+    <input {% if listing in user.watchlist.listings.all %} class="btn btn-outline-danger btn-sm mb-3" type="submit" value="Remove from watchlist" {% else %} class="btn btn-outline-success btn-sm mb-3" type="submit" value="Add to watchlist" {% endif %}>
 </form>
 {% endif %}
 
@@ -22,27 +22,28 @@
 
 <div>
     {% if listing.image_url %}
-    <img src = {{listing.image_url}} alt="Listing Image" width="300" height="200"></img>
+    <img src = {{listing.image_url}} alt="Listing Image" width="300" height="200" class="mb-2"></img>
     {% else %}
-    <div> No Image provided</div>
+    <div class="mb-2"> No Image provided</div>
     {% endif %}
-    <div>{{ listing.description }}</div>
+    <div class="mb-2">{{ listing.description }}</div>
     {% if listing.bids.exists %}
-        <div> Price: {{ listing.highest_bid.bid }}$</div>
+        <div class="h5"> Price: {{ listing.highest_bid.bid }}$</div>
         <div>{{ listing.bids.count }} bid(s) so far.
             <span>The highest bid is currently held by:
                 {% if request.user == listing.highest_bid.user %}
-                    You
+                    <strong>You</strong>
                 {% else %}   
-                {{ listing.highest_bid.user }}
+                    <strong>{{ listing.highest_bid.user }}</strong>
                 {% endif %}
             </span>
         </div>
     {% else %}
-      <div> Starting Price: {{ listing.starting_bid }}$</div>
+      <div class="h5"> Starting Price: {{ listing.starting_bid }}$</div>
       <div>No bids for far.</div>
     {% endif %}
     
+    <hr />
     <form action="{% url 'listing' listing.id %}" method="post">
         {% csrf_token %}
         <div class="form-group">
@@ -56,42 +57,50 @@
     </form>
 </div>
 
-<div> 
+    <hr />
     <h3>Details</h3>
     <div> Listed by: 
         {% if request.user == listing.user %}
-        You
+            <strong>You</strong>
         {% else %}   
-        {{ listing.user }}
+            <strong>{{ listing.user }}</strong>
         {% endif %}
         </div>
-    <div> {% if listing.category %} Category: {{ listing.category.name }} {% else %} No Category.{% endif %} </div>
+    <div> {% if listing.category %} Category: <strong>{{ listing.category.name }}</strong> {% else %} No Category.{% endif %} </div>
     <div> Last modified: {{ listing.modified }}</div>
-    <div> Created: {{ listing.created }}</div>
+    <div class="mb-2"> Created: {{ listing.created }}</div>
 
     {% if request.user == listing.user %}
-    <form action="{% url 'edit_listing' listing.id %}" method="get">
-        {% csrf_token %}
-        <input class="btn btn-outline-warning" type="submit" value="Edit Listing">
-    </form>
+    <div class="d-flex justify-content-start">
+        <form action="{% url 'edit_listing' listing.id %}" method="get">
+            {% csrf_token %}
+            <input class="btn btn-outline-warning mr-2" type="submit" value="Edit Listing">
+        </form>
 
-    <form action="{% url 'listing' listing.id %}" method="post">
-        {% csrf_token %}
-        
-        <input type="hidden" name="form_type" value="close_listing_form">
-        {% if listing.active == True %}<input class="btn btn-outline-danger" type="submit" value="Close Listing">
-        {% else %}<input class="btn btn-outline-success" type="submit" value="Reopen Listing">{% endif %}
-    </form>
+        <form action="{% url 'listing' listing.id %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="close_listing_form">
+            {% if listing.active == True %}<input class="btn btn-outline-danger" type="submit" value="Close Listing">
+            {% else %}<input class="btn btn-outline-success" type="submit" value="Reopen Listing">{% endif %}
+        </form>
+    </div>
     {% endif %}
 
+    <hr />
     <h3>Comments</h3>
-    <ul>
+    <div class="list-group mb-2">
         {% for comment in comments %}
-        <li>{{ comment }}</li>
+        <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1"> {{ comment.user }}</h5>
+                <small> {{ comment.created }} </small>
+            </div>
+            <p class="mb-1"> {{ comment.comment }}</p>
+        </div>
         {% empty %}
-        <li>No comments yet.</li>
+        <div class="list-group-item">No comments yet.</div>
         {% endfor %}
-    </ul>
+    </div>
 
     {% if user.is_authenticated %}
     <form method="post" action="{% url 'comment' %}">
@@ -104,6 +113,7 @@
     </form>
     {% endif %}
 
+    <hr />
     <a class="btn btn-outline-primary" href="{% url 'index' %}" role="back_button">Back</a>
     
 </div>

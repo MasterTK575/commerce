@@ -14,13 +14,11 @@ def get_pilldata_navbar(request):
     user = request.user
     pilldata = []
     if user.is_authenticated:
-        my_listings_count = Listing.objects.filter(user=user).count()
         my_bids_count = Listing.objects.filter(bids__user=user).distinct().count()
         try:
             watchlist_count = user.watchlist.listings.all().count()
         except:
             watchlist_count = 0
-        pilldata.append(my_listings_count)
         pilldata.append(my_bids_count)
         pilldata.append(watchlist_count)
     return pilldata
@@ -260,11 +258,11 @@ def listing(request, listing_id):
                 return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             if listing.bids.exists():
                 if bid <= listing.highest_bid().bid:
-                    messages.error(request, "Bid is not high engouh.")
+                    messages.error(request, "Bid is not high enough.")
                     return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             else:
                 if bid < listing.starting_bid:
-                    messages.error(request, "Bid is not high engouh.")
+                    messages.error(request, "Bid is not high enough.")
                     return HttpResponseRedirect(reverse("listing", args=(listing_id,)))
             # if ok, commit bid
             new_bid = Bid(bid=bid, user=request.user, listing=listing)

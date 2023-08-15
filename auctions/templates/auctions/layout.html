@@ -33,15 +33,15 @@
       </li>
       <li class="nav-item d-flex justify-content-between align-items-start" >
         <a class="nav-link" href="{% url 'my_listings' %}">My Listings</a>
-        <span class="badge bg-primary rounded-pill"> {{ pilldata|get_item:0 }}</span>
+        <span class="badge bg-primary rounded-pill"> {{ user.listings.count }} </span>
       </li>
       <li class="nav-item d-flex justify-content-between align-items-start">
         <a class="nav-link" href="{% url 'my_bids' %}">My Bids</a>
-        <span class="badge bg-primary rounded-pill">{{ pilldata|get_item:1 }}</span>
+        <span class="badge bg-primary rounded-pill">{{ pilldata|get_item:0 }}</span>
       </li>
       <li class="nav-item d-flex justify-content-between align-items-start">
         <a class="nav-link" href="{% url 'watchlist' %}">Watchlist</a>
-        <span class="badge bg-primary rounded-pill">{{ pilldata|get_item:2 }}</span>
+        <span class="badge bg-primary rounded-pill">{{ pilldata|get_item:1 }}</span>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="{% url 'logout' %}">Log Out</a>

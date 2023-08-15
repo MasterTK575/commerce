@@ -24,7 +24,7 @@
             <input class="form-control" type="url" name="image_url" placeholder="URL to your Image" value="{{ listing.image_url }}">
         </div>
         <div class="form-group">
-            <select class="form-select" aria-label="Default select example" name="category">
+            <select class="custom-select" aria-label="Default select example" name="category">
                 <option value="" {% if listing.category == None %} selected {% endif %}>Select a category</option>
                 {% for category in categories %}
                     <option value={{category.name}} {% if listing.category == category %} selected {% endif %}>{{ category.name }}</option>

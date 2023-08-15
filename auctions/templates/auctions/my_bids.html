@@ -10,7 +10,7 @@
   {% for listing in listings %}
     <a href="{% url 'listing' listing.id %}" class="list-group-item list-group-item-action">
       <div class="d-flex w-100 justify-content-between">
-        <h5 class="mb-1">{{ listing.title }}</h5>
+        <h4 class="mb-1">{{ listing.title }}</h4>
         <small class="text-body-secondary">Last modified: {{ listing.modified }}</small>
       </div>
       {% if listing.image_url %}
@@ -19,9 +19,9 @@
       <div> No Image provided</div>
       {% endif %}
       {% if listing.bids.exists %}
-      <p class="mb-1"> Price: {{ listing.highest_bid.bid }}$</p>
+      <p class="mb-1"> <strong>Price: {{ listing.highest_bid.bid }}$ </strong> </p>
       {% else %}
-      <p class="mb-1"> Starting Price: {{ listing.starting_bid }}$</p>
+      <p class="mb-1"> <strong>Starting Price: {{ listing.starting_bid }}$ </strong> </p>
       {% endif %}
       <p class="mb-1"><small class="text-body-secondary">{% if  listing.active == True %} Active {% else %} Closed {% endif %}</small></p>
       <small class="text-body-secondary">Created: {{ listing.created }}</small>
